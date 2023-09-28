@@ -76,12 +76,12 @@ var description3 = `Run a block, possibly multiple time based on an array of val
 var summary3 = description3;
 var inputs3 = [
   { name: "block_name", type: "string", customSocket: "text" },
-  { name: "loop_input", type: "object", customSocket: "object", description: "An object containing the name of the input variable to loop and its value which can be an array of values" },
-  { name: "loop_output_name", type: "string", customSocket: "text", description: "The name of the loop output to return as the main results of the block. Will probably be an array of values" },
-  { name: "args", type: "object", customSocket: "object", description: "All the other input arguments to pass to the block" }
+  { name: "loop_input", type: "object", customSocket: "object", description: "A json containing the name or title of the input variable to loop and its value which can be an array of values." },
+  { name: "args", type: "object", customSocket: "object", description: "All the other inputs to pass to the block" },
+  { name: "loop_output_name", type: "string", customSocket: "text", description: "Optional. The name or title of the loop output to return as an image/audio/document/video/file array." }
 ];
 var outputs3 = [
-  { name: "results", type: "object", customSocket: "object", description: "All the outputs of the looped block" },
+  { name: "results", type: "object", customSocket: "object", description: "All the outputs of the looped block. Works even if loop_output_name is not specified" },
   { name: "info", type: "string", customSocket: "text", description: "Information about the block execution for loop_output_name" },
   { name: "images", type: "array", customSocket: "imageArray", description: "Images returned by the block for loop_output_name" },
   { name: "audio", type: "array", customSocket: "audioArray", description: "Audio returned by the block for loop_output_name" },
@@ -93,11 +93,11 @@ var outputs3 = [
 var controls3 = null;
 var links3 = {};
 var loop_block_component = createComponent3(group_id3, id3, title3, category3, description3, summary3, links3, inputs3, outputs3, controls3, parsePayload3);
-function findNameFromTitle(infos, title4) {
+function findNameFromTitle(infos, title5) {
   const keys = Object.keys(infos);
   for (const key of keys) {
     const info = infos[key];
-    if (info.title == title4 || info.name == title4)
+    if (info.title == title5 || info.name == title5)
       return info.name;
   }
   return "";
@@ -132,9 +132,9 @@ async function parsePayload3(payload, ctx) {
   const args_keys = Object.keys(common_args);
   const args = {};
   for (const key of args_keys) {
-    const id4 = findNameFromTitle(targetBlock.inputs, key);
-    if (id4)
-      args[id4] = common_args[key];
+    const id5 = findNameFromTitle(targetBlock.inputs, key);
+    if (id5)
+      args[id5] = common_args[key];
     else
       info += `WARNING running block ${block_name}, input ${key} not recognized; `;
   }
@@ -178,10 +178,98 @@ async function parsePayload3(payload, ctx) {
   }
   if (!results || results.length == 0)
     throw new Error(`Block ${block_name} did not return any results`);
-  const outputs4 = results[output_name];
+  const outputs5 = results[output_name];
   if (info != "")
     console_warn(info);
-  return { result: { "ok": true }, results, info, documents: outputs4, videos: outputs4, images: outputs4, audios: outputs4, files: outputs4, objects: outputs4 };
+  else
+    info = "ok";
+  return { result: { "ok": true }, results, info, documents: outputs5, videos: outputs5, images: outputs5, audios: outputs5, files: outputs5, objects: outputs5 };
+}
+
+// component_StringArrayToJson.js
+import { console_warn as console_warn2, createComponent as createComponent4 } from "omni-utils";
+var group_id4 = "utilities";
+var id4 = "stringarray_to_json";
+var title4 = "Construct a json from a string array";
+var category4 = "JSON";
+var description4 = "Construct a json from a string array, using a specified separator to split the string array.";
+var summary4 = description4;
+var inputs4 = [
+  { name: "name", type: "string", customSocket: "text", description: "If specified, the json will have this structure: { <name> : [array_value1, array_value2...] }, if not it will use [array_value1, array_value2...]" },
+  { name: "string", type: "string", customSocket: "text", description: "The string to be parsed and turned into an array of values." },
+  { name: "type", type: "string", customSocket: "text", choices: ["string", "number", "boolean", "object"], defaultValue: "string", description: "The type of the values in the array." },
+  { name: "separator", type: "string", customSocket: "text", description: "The separator to use to split the values of the input variable to loop. If not specified, line-break will be used." }
+];
+var outputs4 = [
+  { name: "json", type: "object", customSocket: "object", description: "The json created from the inputs." },
+  { name: "text", type: "string", customSocket: "text", description: "The stringified json object created from the inputs." },
+  { name: "info", type: "string", customSocket: "text", description: "Information about the block execution" }
+];
+var controls4 = null;
+var links4 = {};
+var stringarray_to_json_component = createComponent4(group_id4, id4, title4, category4, description4, summary4, links4, inputs4, outputs4, controls4, parsePayload4);
+async function parsePayload4(payload, ctx) {
+  debugger;
+  const input_name = payload.name;
+  const input_string = payload.string;
+  const input_type = payload.type;
+  const separator = payload.separator || "\n";
+  if (!input_string) {
+    throw new Error(`No string specified`);
+  }
+  let info = "";
+  const values = input_string.split(separator);
+  if (!values || values.length == 0)
+    throw new Error(`No values found in the string ${input_string} using the separator ${separator}`);
+  const value_array = [];
+  for (let value of values) {
+    try {
+      if (input_type == "number")
+        value = Number(value);
+      else if (input_type == "boolean") {
+        value = value.toLowerCase() === "true";
+        if (!value)
+          value = value.toLowerCase() === "1";
+        if (!value)
+          value = value.toLowerCase() === "yes";
+        if (!value)
+          value = value.toLowerCase() === "y";
+        if (!value)
+          value = value.toLowerCase() === "ok";
+        if (!value)
+          value = value.toLowerCase() === "on";
+      } else if (input_type == "object")
+        value = JSON.parse(value);
+      if (!value)
+        info += `Value ${value} is not a valid ${input_type}; 
+`;
+      value_array.push(value);
+    } catch (e) {
+      info += `Error parsing value ${value} to type ${input_type}: ${e.message}; 
+`;
+      continue;
+    }
+  }
+  if (value_array.length == 0)
+    throw new Error(`No values found in the string ${input_string} using the separator ${separator}`);
+  let json = null;
+  if (input_name && input_name.length > 0) {
+    json = {};
+    json[input_name] = value_array;
+  } else {
+    json = value_array;
+  }
+  if (info.length > 0)
+    console_warn2(info);
+  else
+    info = "ok";
+  let text = "";
+  try {
+    text = JSON.stringify(json);
+  } catch (e) {
+    throw new Error(`Error stringifying json: ${e.message}`);
+  }
+  return { result: { "ok": true }, json, text, info };
 }
 
 // extension.js
@@ -189,7 +277,8 @@ async function CreateComponents() {
   const components = [
     load_variable_component,
     save_variable_component,
-    loop_block_component
+    loop_block_component,
+    stringarray_to_json_component
   ];
   return {
     blocks: components,

@@ -2,6 +2,7 @@
 import { load_variable_component } from "./component_LoadVariable.js";
 import { save_variable_component } from "./component_SaveVariable.js";
 import { loop_block_component } from "./component_LoopBlock.js"
+import { stringarray_to_json_component } from "./component_StringArrayToJson.js"
 
 async function CreateComponents() 
 {
@@ -9,6 +10,7 @@ async function CreateComponents()
     load_variable_component,
     save_variable_component,
     loop_block_component,
+    stringarray_to_json_component,
     ];
 
   return {

@@ -18,12 +18,12 @@ const summary = description;
 
 const inputs = [
     { name: 'block_name', type: 'string', customSocket: 'text'},
-    { name: 'loop_input', type: 'object', customSocket: 'object', description: 'An object containing the name of the input variable to loop and its value which can be an array of values'},
-    { name: 'loop_output_name', type: 'string', customSocket: 'text', description: 'The name of the loop output to return as the main results of the block. Will probably be an array of values'},
-    { name: 'args', type: 'object', customSocket: 'object', description: 'All the other input arguments to pass to the block'},
+    { name: 'loop_input', type: 'object', customSocket: 'object', description: 'A json containing the name or title of the input variable to loop and its value which can be an array of values.'},
+    { name: 'args', type: 'object', customSocket: 'object', description: 'All the other inputs to pass to the block'},
+    { name: 'loop_output_name', type: 'string', customSocket: 'text', description: 'Optional. The name or title of the loop output to return as an image/audio/document/video/file array.'},
 ];
 const outputs = [
-    { name: 'results', type: 'object', customSocket: 'object', description: 'All the outputs of the looped block'},
+    { name: 'results', type: 'object', customSocket: 'object', description: 'All the outputs of the looped block. Works even if loop_output_name is not specified'},
     { name: 'info', type: 'string', customSocket: 'text', description: 'Information about the block execution for loop_output_name'},
     { name: 'images', type: 'array', customSocket: 'imageArray', description: 'Images returned by the block for loop_output_name'},
     { name: 'audio', type: 'array', customSocket: 'audioArray', description: 'Audio returned by the block for loop_output_name'},
@@ -153,7 +153,7 @@ async function parsePayload(payload, ctx)
 
     const outputs = results[output_name];
 
-    if (info != "") console_warn(info);    
+    if (info != "") console_warn(info); else info = "ok";    
    
     return { result: { "ok": true }, results, info, documents: outputs, videos: outputs, images: outputs, audios: outputs, files: outputs, objects: outputs};
 }
