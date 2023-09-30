@@ -539,42 +539,48 @@ async function parsePayload6(payload, ctx) {
 import { createComponent as createComponent7 } from "omni-utils";
 var group_id7 = "utilities";
 var id7 = "passthrough_string";
-var title7 = "Passthrough a String";
+var title7 = "Passthrough String";
 var category7 = "JSON";
 var description7 = "Passthrough a string. By naming this block and moving it, a cleaner recipe can be achieved.";
 var summary7 = description7;
 var inputs7 = [
-  { name: "string", type: "string", customSocket: "text", description: "The string to be passed through." }
+  { name: "input_string", type: "string", customSocket: "text", description: "The string to be passed through." }
 ];
 var outputs7 = [
-  { name: "string", type: "string", customSocket: "text", description: "The string that was passed through." }
+  { name: "output_string", type: "string", customSocket: "text", description: "The string that was passed through." },
+  { name: "json", title: "{<block_name>:<output_string}", type: "object", customSocket: "object", description: "A json with the format { <blockname>: <output_string> }" }
 ];
 var controls7 = null;
 var links7 = {};
 var passthrough_string_component = createComponent7(group_id7, id7, title7, category7, description7, summary7, links7, inputs7, outputs7, controls7, parsePayload7);
 async function parsePayload7(payload, ctx) {
-  return { result: { "ok": true }, string: payload?.string };
+  const output_string = payload.input_string;
+  const json = {};
+  const blockname = ctx.node.data["x-omni-title"] || "Passthrough String";
+  json[blockname] = output_string;
+  return { result: { "ok": true }, output_string, json };
 }
 
-// component_ReplaceFromBlocks.js
+// component_TextTemplateWithJsons.js
 import { createComponent as createComponent8 } from "omni-utils";
 var group_id8 = "utilities";
-var id8 = "replace_from_blocks";
-var title8 = `Replace {{block_names }} from block names`;
+var id8 = "text_template_with_jsons";
+var title8 = `Text Template with JSONs`;
 var category8 = "Blocks";
 var description8 = `Replace texts in a template based on the names of the blocks connected to the <replace_with> mulitple inputs.`;
 var summary8 = description8;
 var inputs8 = [
-  { name: "template", type: "string", customSocket: "text" },
-  { name: "replace_with", type: "string", customSocket: "text", allowMultiple: true, description: "Replace texts in the template based on the name of the block(s) connected here using a {{<name of block>}} pattern." }
+  { name: "template", title: "Template with {{pattern}} {{other_pattern}}, etc.", type: "string", customSocket: "text" },
+  { name: "replacements", title: "{pattern:replacement}", type: "object", customSocket: "object", allowMultiple: true, description: "Replace {{<key>}} patterns in the template with <value> when fed with {<key>:<value>} objects. Support multiple inputs." }
 ];
 var outputs8 = [
   { name: "output_string", type: "string", customSocket: "text", description: "The string output after the replacements." },
+  { name: "json", title: "{<block_name>:<output_string}", type: "object", customSocket: "object", description: "A json with the format { <blockname>: <output_string> }" },
   { name: "info", type: "string", customSocket: "text", description: "Information about the block execution" }
 ];
 var controls8 = null;
 var links8 = {};
-var replace_from_block_component = createComponent8(group_id8, id8, title8, category8, description8, summary8, links8, inputs8, outputs8, controls8, parsePayload8);
+var text_template_with_jsons_component = createComponent8(group_id8, id8, title8, category8, description8, summary8, links8, inputs8, outputs8, controls8, parsePayload8);
 function replaceSubstrings(str, block_name, replace_with) {
   const regex = new RegExp(`\\{\\{\\s*${block_name}\\s*\\}\\}`, "g");
   const matches = str.match(regex);
@@ -587,44 +593,46 @@ async function parsePayload8(payload, ctx) {
   const template = payload.template;
   if (!template || template == "")
     throw new Error(`No template specified`);
-  const node = ctx.node;
-  debugger;
-  const inputs9 = node.inputs;
-  let replace_with_inputs = inputs9.replace_with;
-  let connections = replace_with_inputs.connections;
-  if (!replace_with_inputs)
-    throw new Error(`No block connected to the replace_with input`);
-  if (Array.isArray(replace_with_inputs) == false)
-    replace_with_inputs = [replace_with_inputs];
+  const blockname = ctx.node.data["x-omni-title"] || "Text Template with JSONs";
+  let replacements = ctx.inputs.replacements;
+  if (!replacements)
+    throw new Error(`No replacements specified`);
+  if (Array.isArray(replacements) == false)
+    replacements = [replacements];
+  if (replacements.length == 0)
+    throw new Error(`No replacements specified`);
   const regex = /\{\{(.*?)\}\}/g;
   let match;
   let sanitized_template = template;
-  const patterns = [];
+  const template_patterns = [];
   let replacement_count = 0;
   while ((match = regex.exec(template)) !== null) {
-    patterns.push(match[1].trim());
+    template_patterns.push(match[1].trim());
   }
-  for (const pattern of patterns) {
+  for (const pattern of template_patterns) {
     const sanitized_pattern = sanitizeName(pattern);
     if (sanitized_pattern != pattern) {
-      [sanitized_template, replacement_count] = replaceSubstrings(sanitized_template, pattern, sanitized_pattern);
-      info += `Swapped pattern {{${pattern}}} for {{${sanitized_pattern}}} #${replacement_count} times; 
- `;
+      [sanitized_template, replacement_count] = replaceSubstrings(sanitized_template, pattern, `{{${sanitized_pattern}}}`);
+      info += `Swapped pattern {{${pattern}}} for {{${sanitized_pattern}}} #${replacement_count} times; `;
     }
   }
   let output_string = sanitized_template;
-  for (const input of replace_with_inputs) {
-    let block_name = input.name;
-    const sanitized_block_name = sanitizeName(block_name);
-    if (block_name != sanitized_block_name) {
-      info += `Using block_name ${block_name} instead of ${sanitized_block_name}; 
+  for (const replacement of replacements) {
+    const replacements_names = Object.keys(replacement);
+    for (const replacement_name of replacements_names) {
+      const replacement_value = replacement[replacement_name];
+      const sanitized_replacement_name = sanitizeName(replacement_name);
+      if (replacement_name != sanitized_replacement_name) {
+        info += `Using replacement {{${sanitized_replacement_name}}} instead of {{${replacement_name}}}; `;
+      }
+      [output_string, replacement_count] = replaceSubstrings(output_string, sanitized_replacement_name, replacement_value);
+      info += `Replaced {{${replacement_name}}} #${replacement_count} times with [${replacement_value}];
  `;
     }
-    [output_string, replacement_count] = replaceSubstrings(output_string, sanitized_block_name, input.value);
-    info += `Replaced ${block_name} #${replacement_count} times with ${input.value};
- `;
   }
-  return { result: { "ok": true }, output_string, info };
+  const json = {};
+  json[blockname] = output_string;
+  return { result: { "ok": true }, output_string, json, info };
 }
 
 // extension.js
@@ -637,7 +645,7 @@ async function CreateComponents() {
     images_to_markdown_component,
     get_variables_groups_component,
     passthrough_string_component,
-    replace_from_block_component
+    text_template_with_jsons_component
   ];
   return {
     blocks: components,

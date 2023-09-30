@@ -6,7 +6,7 @@ import { stringarray_to_json_component } from "./component_StringArrayToJson.js"
 import { images_to_markdown_component } from "./component_ImagesToMarkdown.js"
 import { get_variables_groups_component } from "./component_getVariablesGroups.js";
 import { passthrough_string_component } from "./component_PassthroughString.js";
-import { replace_from_block_component } from "./component_ReplaceFromBlocks.js";
+import { text_template_with_jsons_component } from "./component_TextTemplateWithJsons.js";
 
 async function CreateComponents() 
 {
@@ -18,7 +18,7 @@ async function CreateComponents()
     images_to_markdown_component,
     get_variables_groups_component,
     passthrough_string_component,
-    replace_from_block_component,
+    text_template_with_jsons_component,
     ];
 
   return {
