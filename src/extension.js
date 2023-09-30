@@ -3,6 +3,10 @@ import { load_variable_component } from "./component_LoadVariable.js";
 import { save_variable_component } from "./component_SaveVariable.js";
 import { loop_block_component } from "./component_LoopBlock.js"
 import { stringarray_to_json_component } from "./component_StringArrayToJson.js"
+import { images_to_markdown_component } from "./component_ImagesToMarkdown.js"
+import { get_variables_groups_component } from "./component_getVariablesGroups.js";
+import { passthrough_string_component } from "./component_PassthroughString.js";
+import { replace_from_block_component } from "./component_ReplaceFromBlocks.js";
 
 async function CreateComponents() 
 {
@@ -11,6 +15,10 @@ async function CreateComponents()
     save_variable_component,
     loop_block_component,
     stringarray_to_json_component,
+    images_to_markdown_component,
+    get_variables_groups_component,
+    passthrough_string_component,
+    replace_from_block_component,
     ];
 
   return {

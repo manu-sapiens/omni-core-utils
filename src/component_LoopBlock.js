@@ -24,13 +24,14 @@ const inputs = [
 ];
 const outputs = [
     { name: 'results', type: 'object', customSocket: 'object', description: 'All the outputs of the looped block. Works even if loop_output_name is not specified'},
-    { name: 'info', type: 'string', customSocket: 'text', description: 'Information about the block execution for loop_output_name'},
     { name: 'images', type: 'array', customSocket: 'imageArray', description: 'Images returned by the block for loop_output_name'},
     { name: 'audio', type: 'array', customSocket: 'audioArray', description: 'Audio returned by the block for loop_output_name'},
     { name: 'documents', type: 'array', customSocket: 'documentArray', description: 'Documents returned by the block for loop_output_name'},
     { name: 'videos', type: 'array', customSocket: 'fileArray', description: 'Videos returned by the block for loop_output_name'},
     { name: 'files', type: 'array', customSocket: 'fileArray', description: 'Files returned by the block for loop_output_name'},
     { name: 'objects', type: 'array', customSocket: 'objectArray', description: 'Objects returned by the block for loop_output_name'},
+    { name: 'info', type: 'string', customSocket: 'text', description: 'Information about the block execution'},
+
 ];
 
 const controls = null;
@@ -52,7 +53,6 @@ function findNameFromTitle(infos, title)
 
 async function parsePayload(payload, ctx) 
 {
-    debugger;
     const block_name = payload.block_name;
     if (!isBlockAvailable(ctx, block_name)) {
         throw new Error(`Block ${block_name} not found`)

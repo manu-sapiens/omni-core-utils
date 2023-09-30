@@ -35,7 +35,6 @@ export const stringarray_to_json_component = createComponent(group_id, id, title
 
 async function parsePayload(payload, ctx) 
 {
-    debugger;
     const input_name = payload.name;
     const input_string = payload.string;
     const input_type = payload.type;
@@ -47,8 +46,11 @@ async function parsePayload(payload, ctx)
 
     let info = "";
 
+    //debugger;
     // break the input_string using the separator
-    const values = input_string.split(separator);
+    let values = [];
+    if (separator == '\n') values = input_string.split(/\r?\n/);
+    else values = input_string.split(separator);
     if (!values || values.length == 0) throw new Error(`No values found in the string ${input_string} using the separator ${separator}`);
 
     const value_array = [];
@@ -69,8 +71,15 @@ async function parsePayload(payload, ctx)
             }
             else if (input_type == "object") value = JSON.parse(value);
     
-            if (!value) info += `Value ${value} is not a valid ${input_type}; \n`;
-            value_array.push(value);
+            if (value) 
+            {
+                value_array.push(value); 
+            }
+            else
+            {
+                info += `Value ${value} is not a valid ${input_type}; \n`;
+            }
+            
         }
         catch (e)
         {
