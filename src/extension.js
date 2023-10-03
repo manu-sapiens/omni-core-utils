@@ -7,6 +7,10 @@ import { images_to_markdown_component } from "./component_ImagesToMarkdown.js"
 import { get_variables_groups_component } from "./component_getVariablesGroups.js";
 import { passthrough_string_component } from "./component_PassthroughString.js";
 import { text_template_with_jsons_component } from "./component_TextTemplateWithJsons.js";
+import { json_combiner_component } from "./component_JsonCombiner.js";
+import { label_string_component } from "./label_string_component.js";
+import { label_object_component } from "./label_object_component.js";
+import { loop_recipe_component } from "./component_LoopRecipe.js";
 
 async function CreateComponents() 
 {
@@ -19,6 +23,10 @@ async function CreateComponents()
     get_variables_groups_component,
     passthrough_string_component,
     text_template_with_jsons_component,
+    json_combiner_component,
+    label_string_component,
+    label_object_component,
+    loop_recipe_component
     ];
 
   return {

@@ -1,6 +1,6 @@
 //@ts-check
 import { createComponent, console_warn} from 'omni-utils'; //'omnilib-utils/component.js';
-import { loadVariablesGroups, sanitizeName, GetVariablesInfo } from './variables';
+import { loadVariablesGroups, sanitizeName, GetVariablesInfo } from './utils';
 
 const group_id = 'utilities';
 const id = 'get_variables_groups';

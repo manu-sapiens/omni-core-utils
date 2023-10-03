@@ -1,6 +1,6 @@
 //@ts-check
 import { createComponent } from "omni-utils";
-import { sanitizeName, loadVariablesGroups, readVariableFromGroup } from "./variables";
+import { sanitizeName, loadVariablesGroups, readVariableFromGroup } from "./utils";
 
 const group_id = "utilities";
 const id = "load_variable";
@@ -45,7 +45,7 @@ async function parsePayload(payload, ctx)
     const groups = await loadVariablesGroups(ctx);
     if (!groups) throw new Error(`No variable groups found in the database and error creating the groups object`);
 
-    const variable_value = readVariableFromGroup(ctx, groups, group_name, variable_name);
+    const variable_value = await readVariableFromGroup(ctx, groups, group_name, variable_name);
     if (!variable_value) 
     {   
         info += `No variable ${variable_name} found in the group ${group_name}, returning null`;    
@@ -61,6 +61,5 @@ async function parsePayload(payload, ctx)
     if (string_value == "<empty>") string_value == "";
 
     const return_value = { result: { "ok": true }, group_name, variable_name, string_value, number_value, boolean_value, object_value, info};
-    return return_value;
     return return_value;
 }

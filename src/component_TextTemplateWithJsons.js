@@ -1,6 +1,6 @@
 //@ts-check
 import { createComponent } from 'omni-utils';
-import { sanitizeName } from './variables';
+import { sanitizeName } from './utils';
 
 const group_id = 'utilities';
 const id = 'text_template_with_jsons';
