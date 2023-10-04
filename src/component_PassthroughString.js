@@ -4,7 +4,7 @@ import { createComponent } from 'omni-utils';
 const group_id = 'utilities';
 const id = 'passthrough_string';
 const title = 'Passthrough String';
-const category = 'JSON';
+const category = 'Data Manipulation';
 const description = 'Passthrough a string. By naming this block and moving it, a cleaner recipe can be achieved.';
 const summary = description;
 

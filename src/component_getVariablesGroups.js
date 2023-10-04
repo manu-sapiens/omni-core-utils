@@ -5,7 +5,7 @@ import { loadVariablesGroups, sanitizeName, GetVariablesInfo } from './utils';
 const group_id = 'utilities';
 const id = 'get_variables_groups';
 const title = `Get variables groups`;
-const category = 'Database';
+const category = 'Data Manipulation';
 const description = `Get info on variables and their groups in the db`;
 const summary = description;
 

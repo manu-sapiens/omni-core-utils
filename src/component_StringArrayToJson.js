@@ -12,7 +12,7 @@ const runBlock = async (ctx, block, args) => {
 const group_id = 'utilities';
 const id = 'stringarray_to_json';
 const title = 'Construct a json from a string array';
-const category = 'JSON';
+const category = 'Data Manipulation';
 const description = 'Construct a json from a string array, using a specified separator to split the string array.';
 const summary = description;
 

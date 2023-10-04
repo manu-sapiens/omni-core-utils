@@ -2,7 +2,7 @@
 import { user_db_get, user_db_put, is_valid } from 'omni-utils';
 const VARIABLES_GROUPS = "omni_variable_groups";
 export const LABEL_GROUP = "reserved_omni_labels";
-
+export const RECIPE_OUTPUT_GROUP = "reserved_omni_recipe_output";
 export function sanitizeName(name)
 {
     if (is_valid(name) == false) return null;
@@ -220,4 +220,96 @@ export async function runRecipe(ctx, recipe_id, args)
     });
 
     return true;
+}
+
+export function textSocket(name, description =null, title=null)
+{
+    const json = {};
+    json.name = name;
+    json.type = "string";
+    json.customSocket = "text";
+    if (description) json.description = description;
+    if (title) json.title = title;
+
+    return json;
+}
+
+export function imagesSocket(name, description=null, title=null)
+{
+    const json = {};
+    json.name = name;
+    json.type = "array";
+    json.customSocket = "imageArray";
+    if (description) json.description = description;
+    if (title) json.title = title;
+
+    return json;
+}
+
+export function audioSocket(name, description=null, title=null)
+{
+    const json = {};
+    json.name = name;
+    json.type = "array";
+    json.customSocket = "audioArray";
+    if (description) json.description = description;
+    if (title) json.title = title;
+
+    return json;
+}
+
+export function documentsSocket(name, description=null, title=null)
+{
+    const json = {};
+    json.name = name;
+    json.type = "array";
+    json.customSocket = "documentArray";
+    if (description) json.description = description;
+    if (title) json.title = title;
+
+    return json;
+}
+
+export function videosSocket(name, description=null, title=null)
+{
+    const json = {};
+    json.name = name;
+    json.type = "array";
+    json.customSocket = "fileArray";
+    if (description) json.description = description;
+    if (title) json.title = title;
+
+    return json;
+}
+
+export function filesSocket(name, description=null, title=null)
+{
+    const json = {};
+    json.name = name;
+    json.type = "array";
+    json.customSocket = "fileArray";
+    if (description) json.description = description;
+    if (title) json.title = title;
+
+    return json;
+}
+
+export function objectSocket(name, description=null, title=null)
+{
+    const json = {};
+    json.name = name;
+    json.type = "array";
+    json.customSocket = "objectArray";
+    if (description) json.description = description;
+    if (title) json.title = title;
+
+    return json;
+}
+
+export function blockOutput()
+{
+    const json = {};
+    json.result = {"ok": true};
+
+    return json;
 }

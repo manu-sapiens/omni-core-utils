@@ -5,7 +5,7 @@ import { sanitizeName, loadVariablesGroups, saveVariableToGroup, readVariableFro
 const group_id = 'utilities';
 const id = 'save_variable';
 const title = `Save a variable`;
-const category = 'Database';
+const category = 'Data Manipulation';
 const description = `Save a variable to the database`;
 const summary = description;
 

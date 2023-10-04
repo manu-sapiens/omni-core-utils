@@ -15,7 +15,7 @@ const runBlock = async (ctx, block, args) =>
 const group_id = 'utilities';
 const id = 'loop_block';
 const title = `Loop a block`;
-const category = 'Blocks';
+const category = 'Data Manipulation';
 const description = `Run a block, possibly multiple time based on an array of values`;
 const summary = description;
 

@@ -5,7 +5,7 @@ import { sanitizeName, loadVariablesGroups, readVariableFromGroup } from "./util
 const group_id = "utilities";
 const id = "load_variable";
 const title = "Load a variable";
-const category = "Database";
+const category = "Data Manipulation";
 const description = "Load a variable from the database";
 const summary = description;
 

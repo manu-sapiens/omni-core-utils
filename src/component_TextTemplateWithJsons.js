@@ -5,7 +5,7 @@ import { sanitizeName } from './utils';
 const group_id = 'utilities';
 const id = 'text_template_with_jsons';
 const title = `Text Template with JSONs`;
-const category = 'Blocks';
+const category = 'Data Manipulation';
 const description = `Replace texts in a template based on the names of the blocks connected to the <replace_with> mulitple inputs.`;
 const summary = description;
 
