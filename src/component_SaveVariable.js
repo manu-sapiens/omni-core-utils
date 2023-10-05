@@ -60,7 +60,7 @@ async function parsePayload(payload, ctx)
     if (!groups) throw new Error(`No variable groups found in the database and error creating the groups object`);
 
     await saveVariableToGroup(ctx, groups, group_name, variable_name, variable_value);
-    const read_value = await readVariableFromGroup(ctx, groups, group_name, variable_name);
+    const read_value = readVariableFromGroup(groups, group_name, variable_name);
 
     if (!read_value) throw new Error(`Error saving variable ${variable_name} to group ${group_name}`);
     if (read_value.string_value != string_value) throw new Error(`Error saving variable ${variable_name} to group ${group_name}, string value ${string_value} not saved`);

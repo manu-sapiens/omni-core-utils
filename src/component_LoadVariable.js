@@ -45,7 +45,7 @@ async function parsePayload(payload, ctx)
     const groups = await loadVariablesGroups(ctx);
     if (!groups) throw new Error(`No variable groups found in the database and error creating the groups object`);
 
-    const variable_value = await readVariableFromGroup(ctx, groups, group_name, variable_name);
+    const variable_value = readVariableFromGroup(groups, group_name, variable_name);
     if (!variable_value) 
     {   
         info += `No variable ${variable_name} found in the group ${group_name}, returning null`;    

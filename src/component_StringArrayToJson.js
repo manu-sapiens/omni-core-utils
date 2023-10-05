@@ -46,7 +46,6 @@ async function parsePayload(payload, ctx)
 
     let info = "";
 
-    //debugger;
     // break the input_string using the separator
     let values = [];
     if (separator == '\n') values = input_string.split(/\r?\n/);

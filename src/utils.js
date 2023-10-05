@@ -40,21 +40,26 @@ export async function saveVariableToGroup(ctx, groups, group_name, variable_name
     await saveGroupsToDb(ctx, groups);
 }
 
-export async function wipeVariableFromGroup(ctx, groups, group_name, variable_name)
+export async function wipeVariableFromGroup(ctx, groups, group_name, variable_name=null)
 {
     let group = null;
     if (group_name in groups === false || groups[group_name] === null || groups[group_name] === undefined) return;
     
     group = groups[group_name];
-    if (variable_name in group === false || group[variable_name] === null || group[variable_name] === undefined) return;
-    
-    let variable = group[variable_name];
-    if (Array.isArray(variable)) {group[variable_name] = [];} else {group[variable_name] = null;}
-    
+    if (variable_name && variable_name != "")
+    {
+        let variable = group[variable_name];
+        if (Array.isArray(variable)) group[variable_name] = []; else group[variable_name] = null;
+    }
+    else
+    {
+        if (Array.isArray(group)) group = []; else group = null;
+    }
+
     await saveGroupsToDb(ctx, groups);
 }
 
-export async function readVariableFromGroup(ctx, groups, group_name, variable_name)
+export function readVariableFromGroup(groups, group_name, variable_name)
 {
 
     if (group_name in groups === false || groups[group_name] === null || groups[group_name] === undefined) return null;
@@ -187,7 +192,7 @@ export async function getLabelValue(ctx, label)
     if (!groups) throw new Error(`No variable groups found in the database and error creating the groups object`);
 
     const sanitized_label = sanitizeName(label);
-    const value = await readVariableFromGroup(ctx, groups, LABEL_GROUP, sanitized_label);
+    const value = readVariableFromGroup(groups, LABEL_GROUP, sanitized_label);
     return value;
 }
 
@@ -209,17 +214,20 @@ export async function runRecipe(ctx, recipe_id, args)
     if (!recipe_json) throw new Error(`Recipe ${recipe_id} not found`);
     const jobService = ctx.app.services.get('jobs');
     const job = await jobService.startRecipe(recipe_json, ctx.sessionId, ctx.userId, args, 0, 'system');
-
+    let value = null;
     await new Promise((resolve, reject) =>
     {
         console.log('waiting for job', job.jobId);
         ctx.app.events.once('jobs.job_finished_' + job.jobId).then((job) =>
         {
+            let workflow_job = job;
+            if (Array.isArray(workflow_job)) workflow_job = workflow_job[0];
+            value = workflow_job.artifact;
             resolve(job);
         });
     });
-
-    return true;
+    
+    return value;
 }
 
 export function textSocket(name, description =null, title=null)
@@ -233,6 +241,32 @@ export function textSocket(name, description =null, title=null)
 
     return json;
 }
+
+export function booleanSocket(name, description =null, title=null)
+{
+    const json = {};
+    json.name = name;
+    json.type = "boolean";
+    json.customSocket = "boolean";
+    if (description) json.description = description;
+    if (title) json.title = title;
+
+    return json;
+}
+
+export function numberSocket(name, description =null, title=null)
+{
+    const json = {};
+    json.name = name;
+    json.type = "number";
+    json.customSocket = "number";
+    if (description) json.description = description;
+    if (title) json.title = title;
+
+    return json;
+}
+
+
 
 export function imagesSocket(name, description=null, title=null)
 {
@@ -306,9 +340,9 @@ export function objectSocket(name, description=null, title=null)
     return json;
 }
 
-export function blockOutput()
+export function blockOutput(args)
 {
-    const json = {};
+    const json = {...args};
     json.result = {"ok": true};
 
     return json;

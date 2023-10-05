@@ -58297,7 +58297,6 @@ import { createComponent } from "omni-utils";
 import { user_db_get, user_db_put, is_valid } from "omni-utils";
 var VARIABLES_GROUPS = "omni_variable_groups";
 var LABEL_GROUP = "reserved_omni_labels";
-var RECIPE_OUTPUT_GROUP = "reserved_omni_recipe_output";
 function sanitizeName(name) {
   if (is_valid(name) == false)
     return null;
@@ -58321,22 +58320,26 @@ async function saveVariableToGroup(ctx, groups, group_name, variable_name, varia
   group[variable_name] = variable_value;
   await saveGroupsToDb(ctx, groups);
 }
-async function wipeVariableFromGroup(ctx, groups, group_name, variable_name) {
+async function wipeVariableFromGroup(ctx, groups, group_name, variable_name = null) {
   let group = null;
   if (group_name in groups === false || groups[group_name] === null || groups[group_name] === void 0)
     return;
   group = groups[group_name];
-  if (variable_name in group === false || group[variable_name] === null || group[variable_name] === void 0)
-    return;
-  let variable = group[variable_name];
-  if (Array.isArray(variable)) {
-    group[variable_name] = [];
+  if (variable_name && variable_name != "") {
+    let variable = group[variable_name];
+    if (Array.isArray(variable))
+      group[variable_name] = [];
+    else
+      group[variable_name] = null;
   } else {
-    group[variable_name] = null;
+    if (Array.isArray(group))
+      group = [];
+    else
+      group = null;
   }
   await saveGroupsToDb(ctx, groups);
 }
-async function readVariableFromGroup(ctx, groups, group_name, variable_name) {
+function readVariableFromGroup(groups, group_name, variable_name) {
   if (group_name in groups === false || groups[group_name] === null || groups[group_name] === void 0)
     return null;
   const group = groups[group_name];
@@ -58434,7 +58437,7 @@ async function getLabelValue(ctx, label) {
   if (!groups)
     throw new Error(`No variable groups found in the database and error creating the groups object`);
   const sanitized_label = sanitizeName(label);
-  const value = await readVariableFromGroup(ctx, groups, LABEL_GROUP, sanitized_label);
+  const value = readVariableFromGroup(groups, LABEL_GROUP, sanitized_label);
   return value;
 }
 async function wipeLabelValue(ctx, label) {
@@ -58453,13 +58456,18 @@ async function runRecipe(ctx, recipe_id, args) {
     throw new Error(`Recipe ${recipe_id} not found`);
   const jobService = ctx.app.services.get("jobs");
   const job = await jobService.startRecipe(recipe_json, ctx.sessionId, ctx.userId, args, 0, "system");
+  let value = null;
   await new Promise((resolve, reject) => {
     console.log("waiting for job", job.jobId);
     ctx.app.events.once("jobs.job_finished_" + job.jobId).then((job2) => {
+      let workflow_job = job2;
+      if (Array.isArray(workflow_job))
+        workflow_job = workflow_job[0];
+      value = workflow_job.artifact;
       resolve(job2);
     });
   });
-  return true;
+  return value;
 }
 function textSocket(name, description14 = null, title14 = null) {
   const json = {};
@@ -58538,8 +58546,8 @@ function objectSocket(name, description14 = null, title14 = null) {
     json.title = title14;
   return json;
 }
-function blockOutput() {
-  const json = {};
+function blockOutput(args) {
+  const json = { ...args };
   json.result = { "ok": true };
   return json;
 }
@@ -58582,7 +58590,7 @@ async function parsePayload(payload, ctx) {
   const groups = await loadVariablesGroups(ctx);
   if (!groups)
     throw new Error(`No variable groups found in the database and error creating the groups object`);
-  const variable_value = await readVariableFromGroup(ctx, groups, group_name, variable_name);
+  const variable_value = readVariableFromGroup(groups, group_name, variable_name);
   if (!variable_value) {
     info += `No variable ${variable_name} found in the group ${group_name}, returning null`;
     const return_value2 = { result: { "ok": false }, group_name, variable_name, string_value: null, number_value: null, boolean_value: null, object_value: null, info };
@@ -58647,7 +58655,7 @@ async function parsePayload2(payload, ctx) {
   if (!groups)
     throw new Error(`No variable groups found in the database and error creating the groups object`);
   await saveVariableToGroup(ctx, groups, group_name, variable_name, variable_value);
-  const read_value = await readVariableFromGroup(ctx, groups, group_name, variable_name);
+  const read_value = readVariableFromGroup(groups, group_name, variable_name);
   if (!read_value)
     throw new Error(`Error saving variable ${variable_name} to group ${group_name}`);
   if (read_value.string_value != string_value)
@@ -59225,43 +59233,44 @@ var description12 = `Run a recipe, possibly multiple time based on an array of v
 var summary12 = description12;
 var inputs12 = [
   { name: "recipe_id", type: "string", customSocket: "text", description: "The UUID of the recipe to loop" },
-  //{ name: 'loop_input_type', type: 'string', customSocket: 'text', choices: ["text", "images", "audio", "documents"], defaultValue: 'text', description: 'The type of input to loop.' },
   { name: "loop_input_json", type: "object", customSocket: "object", description: 'A json containing the name of the input variable to loop and its (array) value. If using Chat Input in the recipe, the name should be "text", "images", "audio", or "documents"' },
-  { name: "other_inputs_json", type: "object", customSocket: "object", description: "All the other inputs to pass to the recipe, in the format {<type>:<value>}" },
-  { name: "label", type: "string", customSocket: "text", defaultValue: "result", description: "The name of the label the recipe uses to returns its result." },
-  { name: "append", type: "boolean", defaultValue: false, description: "If true, the loop will append the new values to any existing value." }
+  { name: "other_inputs_json", type: "object", customSocket: "object", description: "All the other inputs to pass to the recipe, in the format {<type>:<value>}" }
 ];
 var outputs12 = [
-  { name: "results", type: "object", customSocket: "object", description: "A json in the format <label : [label_value from the recipes] >" },
+  { name: "text", type: "string", customSocket: "text", description: "Text returned by each recipe for loop_output_name, separated with |" },
   { name: "images", type: "array", customSocket: "imageArray", description: "Images returned by each recipe for loop_output_name" },
   { name: "audio", type: "array", customSocket: "audioArray", description: "Audio returned by each recipe for loop_output_name" },
   { name: "documents", type: "array", customSocket: "documentArray", description: "Documents returned by each recipe for loop_output_name" },
   { name: "videos", type: "array", customSocket: "fileArray", description: "Videos returned by each recipe for loop_output_name" },
   { name: "files", type: "array", customSocket: "fileArray", description: "Files returned by each recipe for loop_output_name" },
   { name: "objects", type: "array", customSocket: "objectArray", description: "Objects returned by each recipe for loop_output_name" },
+  { name: "results", type: "object", customSocket: "object", description: "A json object of all the results" },
   { name: "info", type: "string", customSocket: "text", description: "Information about the recipe execution" }
 ];
 var controls12 = null;
 var links12 = {};
 var loop_recipe_component = createComponent12(group_id12, id12, title12, category12, description12, summary12, links12, inputs12, outputs12, controls12, parsePayload10);
 async function parsePayload10(payload, ctx) {
-  let info = "";
+  const loop_input_json = payload.loop_input_json;
+  const append = payload.append || false;
+  const other_args = payload.other_inputs_json || {};
   const recipe_id = payload.recipe_id;
+  let info = "";
   if (!recipe_id)
     throw new Error(`No recipe id specified`);
-  const append = payload.append;
-  const loop_input_json = payload.loop_input_json;
+  if (!loop_input_json)
+    throw new Error(`No loop input json specified`);
+  const groups = await loadVariablesGroups(ctx);
+  if (!groups)
+    throw new Error(`No variable groups found in the database and error creating the groups object`);
   const input_keys = Object.keys(loop_input_json);
   const input_name = input_keys[0].toLowerCase();
   if (!input_name || input_name == "")
     throw new Error(`No input name specified`);
   if (input_name in ["text", "images", "audio", "documents"] == false) {
-    info += `Using non-standard input_name ${input_name}, which will not work with Chat Input | `;
+    info += `Using non-standard input_name ${input_name}, which works with form_io, but not Chat Input | `;
   }
   const loop_input_value = loop_input_json[input_name];
-  const raw_label = payload.label;
-  const label = sanitizeName(raw_label);
-  let other_args = payload.other_inputs_json || {};
   const other_keys = Object.keys(other_args);
   const args = {};
   for (let key of other_keys) {
@@ -59273,29 +59282,58 @@ async function parsePayload10(payload, ctx) {
   } else {
     input_array = [loop_input_value];
   }
-  if (!append)
-    await wipeLabelValue(ctx, label);
+  let texts = [];
+  let values = [];
+  let images = [];
+  let audio = [];
+  let videos = [];
+  let files = [];
+  let objects = [];
+  let documents = [];
   for (const input of input_array) {
     if (!input)
       continue;
     args[input_name] = input;
     try {
-      await runRecipe(ctx, recipe_id, args);
+      const result = await runRecipe(ctx, recipe_id, args);
+      if (result)
+        values.push(result);
+      else
+        info += `WARNING: could not read any value from recipe_id ${recipe_id} | `;
+      if (result.text)
+        texts = combineValues(texts, result.text);
+      if (result.images)
+        images = combineValues(images, result.images);
+      if (result.audio)
+        audio = combineValues(audio, result.audio);
+      if (result.documents)
+        documents = combineValues(documents, result.documents);
+      if (result.videos)
+        videos = combineValues(videos, result.videos);
+      if (result.files)
+        files = combineValues(files, result.files);
+      if (result.objects)
+        objects = combineValues(objects, result.objects);
     } catch {
       info += `Error running recipe ${recipe_id} with input ${input} | `;
       continue;
     }
   }
-  const label_value = await getLabelValue(ctx, label);
-  if (!label_value)
-    info += `WARNING: could not read any value from label ${label} | `;
-  const results = {};
-  results[label] = label_value;
-  return { result: { "ok": true }, results, info, documents: label_value, videos: label_value, images: label_value, audios: label_value, files: label_value, objects: label_value };
+  let text = "";
+  for (const text_value of texts) {
+    if (text == "")
+      text = text_value;
+    else
+      text = `${text} | ${text_value}`;
+  }
+  const results = { text, images, audio, documents, videos, files, objects };
+  const return_value = blockOutput({ text, images, audio, documents, videos, files, objects, results, info });
+  return return_value;
 }
 
 // component_RecipeOutput.js
-import { createComponent as createComponent13 } from "omni-utils";
+import { createComponent as createComponent13, setComponentInputs, setComponentOutputs, setComponentControls } from "omni-utils";
+import { OAIBaseComponent, OmniComponentMacroTypes, OmniComponentFlags } from "omni-sockets";
 var group_id13 = "utilities";
 var id13 = "recipe_output";
 var title13 = "Recipe Output";
@@ -59315,8 +59353,18 @@ var outputs13 = [
   textSocket("info", "Information about the block execution.")
 ];
 var controls13 = null;
-var links13 = {};
-var recipe_output_component = createComponent13(group_id13, id13, title13, category13, description13, summary13, links13, inputs13, outputs13, controls13, parsePayload11);
+var baseComponent = OAIBaseComponent.create(group_id13, id13).fromScratch().set("title", title13).set("category", category13).set("description", description13).setMethod("X-CUSTOM").setMeta({
+  source: {
+    summary: summary13
+  }
+});
+baseComponent = setComponentInputs(baseComponent, inputs13);
+baseComponent = setComponentOutputs(baseComponent, outputs13);
+baseComponent.setFlag(OmniComponentFlags.UNIQUE_PER_WORKFLOW, true);
+if (controls13)
+  baseComponent = setComponentControls(baseComponent, controls13);
+baseComponent.setMacro(OmniComponentMacroTypes.EXEC, parsePayload11);
+var recipe_output_component = baseComponent.toJSON();
 async function parsePayload11(payload, ctx) {
   const text = payload.text;
   const images = payload.images;
@@ -59326,14 +59374,17 @@ async function parsePayload11(payload, ctx) {
   const files = payload.files;
   const objects = payload.objects;
   let info = "";
-  debugger;
-  const recipe_id = ctx.recipe_id;
-  if (!recipe_id)
+  const job_id = ctx.jobId;
+  if (!job_id)
     throw new Error(`No recipe id found in the context`);
+  const jobs_controller = ctx.app.jobs;
+  const jobs = jobs_controller.jobs;
+  const workflow_job = jobs.get(job_id);
   const groups = await loadVariablesGroups(ctx);
   if (!groups)
     throw new Error(`No variable groups found in the database and error creating the groups object`);
   const json = {};
+  json.outputs = {};
   const outputs14 = json.outputs;
   if (text)
     outputs14.text = text;
@@ -59349,14 +59400,8 @@ async function parsePayload11(payload, ctx) {
     outputs14.files = files;
   if (objects)
     outputs14.objects = objects;
-  info += `Recipe: ${recipe_id}: Saving outputs ${JSON.stringify(outputs14)} to the database; | `;
-  const existing_value = await readVariableFromGroup(ctx, groups, RECIPE_OUTPUT_GROUP, recipe_id);
-  let value = outputs14;
-  if (existing_value) {
-    info += `Existing value: ${JSON.stringify(existing_value)}; | `;
-    value = combineValues(existing_value, outputs14);
-  }
-  await saveVariableToGroup(ctx, groups, RECIPE_OUTPUT_GROUP, recipe_id, value);
+  info += `job_id: ${job_id}: Saving outputs ${JSON.stringify(outputs14)} to the database; | `;
+  workflow_job.artifact = outputs14;
   const result = blockOutput({ info });
   return result;
 }
